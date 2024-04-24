@@ -68,7 +68,12 @@ func (t *Tools) UploadFiles(r *http.Request, uploadDir string, rename ...bool) (
 		t.MaxFileSize = 1024 * 1024 * 1024
 	}
 
-	err := r.ParseMultipartForm(t.MaxFileSize)
+	err := t.CreateDirIfNotExists(uploadDir)
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.ParseMultipartForm(t.MaxFileSize)
 	if err != nil {
 		return nil, errors.New("File size too large")
 	}
@@ -152,4 +157,13 @@ func (t *Tools) UploadFiles(r *http.Request, uploadDir string, rename ...bool) (
 		}
 	}
 	return uploadedFiles, nil
+}
+
+// CreateDirIfNotExists creates a directory if it does not already exist
+func (t *Tools) CreateDirIfNotExists(path string) error {
+	const mode = 0755
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return os.MkdirAll(path, mode)
+	}
+	return nil
 }
