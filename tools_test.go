@@ -7,6 +7,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"sync"
 	"testing"
@@ -208,5 +209,32 @@ func TestTools_Slugify(t *testing.T) {
 				t.Errorf("Expected %s, got %s", e.expected, slug)
 			}
 		}
+	}
+}
+
+func TestTools_DownloadStaticFile(t *testing.T) {
+	rr := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/", nil)
+	var tools Tools
+	tools.DownloadStaticFile(rr, req, "./testdata", "img.png", "sky.png")
+
+	res := rr.Result()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			t.Error(err)
+		}
+	}(res.Body)
+
+	if res.Header.Get("Content-Length") != "534283" {
+		t.Errorf("Expected 10, got %s", res.Header.Get("Content-Length"))
+	}
+
+	if res.Header.Get("Content-Type") != "image/png" {
+		t.Errorf("Expected image/png, got %s", res.Header.Get("Content-Type"))
+	}
+
+	if res.Header.Get("Content-Disposition") != "attachment; filename=\"sky.png\"" {
+		t.Errorf("Expected attachment; filename=sky.png, got %s", res.Header.Get("Content-Disposition"))
 	}
 }
